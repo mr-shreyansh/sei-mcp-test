@@ -406,3 +406,44 @@ export async function transferERC1155(
 		amount
 	};
 }
+
+
+/**
+ * Builds an unsigned transaction for transferring Sei to an address.
+ * This transaction can then be signed and sent by a client-side EOA wallet.
+ * @param fromAddress The sender's EOA address
+ * @param toAddress Recipient address
+ * @param amount Amount to send in Sei
+ * @param network Network name or chain ID
+ * @returns An unsigned transaction object
+ */
+export async function buildSeiTransferTx(
+    fromAddress: string,
+    toAddress: string,
+    amount: string, // in ether
+    network = DEFAULT_NETWORK
+) {
+    const publicClient = getPublicClient(network);
+    const validatedFromAddress = services.helpers.validateAddress(fromAddress);
+    const validatedToAddress = services.helpers.validateAddress(toAddress);
+    const amountWei = parseEther(amount);
+
+    const txRequest = {
+        from: validatedFromAddress,
+        to: validatedToAddress,
+        value: amountWei,
+        chain: publicClient.chain
+    };
+
+    const gas = await publicClient.estimateGas(txRequest);
+    const nonce = await publicClient.getTransactionCount({ address: validatedFromAddress });
+
+    return {
+        from: validatedFromAddress,
+        to: validatedToAddress,
+        value: `0x${amountWei.toString(16)}`,
+        gas: `0x${gas.toString(16)}`,
+        nonce: `0x${nonce.toString(16)}`,
+        chainId: publicClient.chain.id
+    };
+}

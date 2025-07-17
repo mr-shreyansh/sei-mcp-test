@@ -19,7 +19,7 @@ export function registerEVMTools(server: McpServer) {
 	if (isWalletEnabled()) {
 		registerWalletTools(server);
 	} else {
-		console.error('Wallet functionality is disabled. Wallet-dependent tools will not be available.');
+		registerUnsignedTxTools(server)
 	}
 }
 
@@ -182,7 +182,7 @@ function registerReadOnlyTools(server: McpServer) {
 	// Get Sei balance
 	server.tool(
 		'get_balance',
-		'Get the native token balance (Sei) for an address',
+		'Get the native token balance (Sei) for an address. here address is argument',
 		{
 			address: z.string().describe("The wallet address name (e.g., '0x1234...') to check the balance for"),
 			network: z
@@ -1364,3 +1364,51 @@ function registerWalletTools(server: McpServer) {
 		}
 	);
 }
+
+// ... (imports are fine) ...
+
+/**
+ * Register tools for building unsigned transactions for an EOA to sign.
+ * This is used when no server-side private key is available.
+ */
+function registerUnsignedTxTools(server: McpServer) {
+    // This tool builds the transaction for an EOA to sign.
+    server.tool(
+       'transfer_sei',
+		'Transfer native tokens (Sei) to an address from a given address. This creates an unsigned transaction that can then be signed by the user',
+        {
+            from: z.string().describe("The sender's EOA address (e.g., '0x1234...')"),
+            to: z.string().describe("The recipient address (e.g., '0x5678...')"),
+            amount: z.string().describe("Amount to send in SEI, as a string (e.g., '0.1')"),
+            network: z.string().optional().describe("Network name or chain ID. Defaults to Sei mainnet.")
+        },
+        async ({ from, to, amount, network = DEFAULT_NETWORK }) => {
+            try {
+                const unsignedTx = await services.buildSeiTransferTx(from, to, amount, network);
+
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: 'An unsigned transaction has been prepared. Please sign and send it using your wallet.'
+                        }
+                    ],
+                    // Use tool_output to return the structured transaction object to the client
+                    tool_output: unsignedTx
+                };
+            } catch (error) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `Error building transaction: ${error instanceof Error ? error.message : String(error)}`
+                        }
+                    ],
+                    isError: true
+                };
+            }
+        }
+    );
+
+}
+
