@@ -47,9 +47,6 @@ startServer()
 app.get('/sse', (req: Request, res: Response) => {
 	console.error(`Received SSE connection request from ${req.ip}`);
 	console.error(`Query parameters: ${JSON.stringify(req.query)}`);
-    const networkConfigsString = process.env.NETWORK_CONFIGS;
-  const parsedConfigs = JSON.parse(networkConfigsString);
-            console.error('NETWORK_CONFIGS (parsed JSON):', parsedConfigs[0].chainId);
 	// Set CORS headers explicitly
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
