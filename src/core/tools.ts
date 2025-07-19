@@ -1375,16 +1375,15 @@ function registerUnsignedTxTools(server: McpServer) {
     // This tool builds the transaction for an EOA to sign.
     server.tool(
        'transfer_sei',
-		'Transfer native tokens (Sei) to an address from a given address. This creates an unsigned transaction that can then be signed by the user',
+		'Transfer native tokens (Sei) to an address from a given address. This creates an unsigned transaction that can then be signed by the user and sender address is not required here',
         {
-            from: z.string().describe("The sender's EOA address (e.g., '0x1234...')"),
             to: z.string().describe("The recipient address (e.g., '0x5678...')"),
             amount: z.string().describe("Amount to send in SEI, as a string (e.g., '0.1')"),
             network: z.string().optional().describe("Network name or chain ID. Defaults to Sei mainnet.")
         },
-        async ({ from, to, amount, network = DEFAULT_NETWORK }) => {
+        async ({ to, amount, network = DEFAULT_NETWORK }) => {
             try {
-                const unsignedTx = await services.buildSeiTransferTx(from, to, amount, network);
+                const unsignedTx = await services.buildSeiTransferTx(to, amount, network);
 
                 return {
                     content: [
@@ -1409,6 +1408,157 @@ function registerUnsignedTxTools(server: McpServer) {
             }
         }
     );
+
+	server.tool(
+		'transfer_erc20',
+		'Transfer ERC20 tokens to another address. This creates an unsigned transaction that can then be signed by the user.',
+		{
+			tokenAddress: z.string().describe('The address of the ERC20 token contract'),
+			toAddress: z.string().describe('The recipient address'),
+			amount: z.string().describe("The amount of tokens to send (in token units, e.g., '10' for 10 tokens)"),
+			network: z.string().optional().describe("Network name (e.g., 'sei', 'sei-testnet', 'sei-devnet') or chain ID. Defaults to Sei mainnet.")
+		},
+		async ({tokenAddress, toAddress, amount, network = DEFAULT_NETWORK}) => {
+			try {
+				const unsignedTx = await services.buildTransferERC20(tokenAddress, toAddress, amount, network);
+				console.log('4')
+				return {
+					content: [
+						{
+							type: 'text',
+							text: 'An unsigned ERC20 transfer transaction has been prepared. Please sign and send it using your wallet.'
+						}
+					],
+					// Use tool_output to return the structured transaction object to the client
+					tool_output: unsignedTx
+				};
+			} catch (error) {
+				return {
+					content: [
+						{
+							type: 'text',
+							text: `Error building ERC20 transfer transaction: ${error instanceof Error ? error.message : String(error)}`
+						}
+					],
+					isError: true
+				};
+			}
+		}
+	);
+
+	server.tool(
+		'approve_erc20',
+		'Approve ERC20 token spending. This creates an unsigned transaction that can then be signed by the user.',
+		{
+			tokenAddress: z.string().describe('The address of the ERC20 token contract'),
+			spenderAddress: z.string().describe('The spender address to approve'),
+			amount: z.string().describe("The amount of tokens to approve (in token units, e.g., '1000' for 1000 tokens)"),
+			network: z.string().optional().describe("Network name (e.g., 'sei', 'sei-testnet', 'sei-devnet') or chain ID. Defaults to Sei mainnet.")
+		},
+		async ({tokenAddress, spenderAddress, amount, network = DEFAULT_NETWORK}) => {
+			try {
+				const unsignedTx = await services.buildApproveERC20(tokenAddress, spenderAddress, amount, network);
+
+				return {
+					content: [
+						{
+							type: 'text',
+							text: 'An unsigned ERC20 approval transaction has been prepared. Please sign and send it using your wallet.'
+						}
+					],
+					// Use tool_output to return the structured transaction object to the client
+					tool_output: unsignedTx
+				};
+			} catch (error) {
+				return {
+					content: [
+						{
+							type: 'text',
+							text: `Error building ERC20 approval transaction: ${error instanceof Error ? error.message : String(error)}`
+						}
+					],
+					isError: true
+				};
+			}
+		}
+	);
+
+	server.tool(
+		'transfer_erc721',
+		'Transfer an NFT (ERC721) to another address. This creates an unsigned transaction that can then be signed by the user.',
+		{
+			tokenAddress: z.string().describe('The address of the ERC721 token contract'),
+			fromAddress: z.string().describe('The current owner address'),
+			toAddress: z.string().describe('The recipient address'),
+			tokenId: z.string().describe("The token ID to transfer (e.g., '1234')"),
+			network: z.string().optional().describe("Network name (e.g., 'sei', 'sei-testnet', 'sei-devnet') or chain ID. Defaults to Sei mainnet.")
+		},
+		async ({tokenAddress, fromAddress, toAddress, tokenId, network = DEFAULT_NETWORK}) => {
+			try {
+				const unsignedTx = await services.buildTransferERC721(tokenAddress, fromAddress, toAddress, BigInt(tokenId), network);
+
+				return {
+					content: [
+						{
+							type: 'text',
+							text: 'An unsigned ERC721 (NFT) transfer transaction has been prepared. Please sign and send it using your wallet.'
+						}
+					],
+					// Use tool_output to return the structured transaction object to the client
+					tool_output: unsignedTx
+				};
+			} catch (error) {
+				return {
+					content: [
+						{
+							type: 'text',
+							text: `Error building ERC721 transfer transaction: ${error instanceof Error ? error.message : String(error)}`
+						}
+					],
+					isError: true
+				};
+			}
+		}
+	);
+
+	server.tool(
+		'transfer_erc1155',
+		'Transfer ERC1155 tokens to another address. This creates an unsigned transaction that can then be signed by the user.',
+		{
+			tokenAddress: z.string().describe('The address of the ERC1155 token contract'),
+			fromAddress: z.string().describe('The current owner address'),
+			toAddress: z.string().describe('The recipient address'),
+			tokenId: z.string().describe("The token ID to transfer (e.g., '1234')"),
+			amount: z.string().describe("The amount of tokens to transfer (e.g., '1' for NFTs or '10' for fungible tokens)"),
+			network: z.string().optional().describe("Network name (e.g., 'sei', 'sei-testnet', 'sei-devnet') or chain ID. Defaults to Sei mainnet.")
+		},
+		async ({tokenAddress, fromAddress, toAddress, tokenId, amount, network = DEFAULT_NETWORK}) => {
+			try {
+				const unsignedTx = await services.buildTransferERC1155(tokenAddress, fromAddress, toAddress, BigInt(tokenId), amount, network);
+
+				return {
+					content: [
+						{
+							type: 'text',
+							text: 'An unsigned ERC1155 transfer transaction has been prepared. Please sign and send it using your wallet.'
+						}
+					],
+					// Use tool_output to return the structured transaction object to the client
+					tool_output: unsignedTx
+				};
+			} catch (error) {
+				return {
+					content: [
+						{
+							type: 'text',
+							text: `Error building ERC1155 transfer transaction: ${error instanceof Error ? error.message : String(error)}`
+						}
+					],
+					isError: true
+				};
+			}
+		}
+	);
 
 }
 

@@ -435,14 +435,13 @@ export async function buildSeiTransferTx(
   const publicClient = getPublicClient(network);
   const validatedToAddress = services.helpers.validateAddress(toAddress);
   const amountWei = parseEther(amount);
-
   return {
     to: validatedToAddress,
-    value: `0x${amountWei.toString(16)}`,
+    value: amountWei.toString(),
   };
 }
 
-export async function buildTransferERC20(
+export async function  buildTransferERC20(
   tokenAddress: string,
   toAddress: string,
   amount: string,
@@ -454,23 +453,20 @@ export async function buildTransferERC20(
   const publicClient = getPublicClient(network);
 
   const contract = getContract({
+	address: validatedTokenAddress,
     abi: erc20TransferAbi,
     client: publicClient as any,
   });
-
   // Get token decimals and symbol
   const decimals = await contract.read.decimals();
-
   // Parse the amount with the correct number of decimals
   const rawAmount = parseUnits(amount, decimals);
-
   const txRequest = {
     address: tokenAddress,
     abi: erc20TransferAbi,
     functionName: "transfer",
-    args: [validatedToAddress, rawAmount],
+    args: [validatedToAddress, rawAmount.toString()],
   };
-
   return txRequest;
 }
 
@@ -501,7 +497,7 @@ export async function buildApproveERC20(
     address: tokenAddress,
     abi: erc20TransferAbi,
     functionName: "approve",
-    args: [validatedSpenderAddress, rawAmount],
+    args: [validatedSpenderAddress, rawAmount.toString()],
   };
 }
 
@@ -543,7 +539,7 @@ export async function buildTransferERC1155(
     address: tokenAddress,
     abi: erc1155TransferAbi,
     functionName: "safeTransferFrom",
-    args: [validatedFromAddress, validatedToAddress, tokenId, amountBigInt, "0x"],
+    args: [validatedFromAddress, validatedToAddress, tokenId.toString(), amountBigInt.toString(), "0x"],
   };
 }
 
