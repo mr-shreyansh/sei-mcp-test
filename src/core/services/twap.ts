@@ -114,6 +114,7 @@ export async function buildask(
     fillDelay: boolean,
     chunks: number,
     deadline: number,
+    limitPrice:string,
     network = config.chainName
 ) {
     const twapSDK = constructSDK({ config });
@@ -156,7 +157,7 @@ export async function buildask(
 
     // Calculate chunk amount and min amount
     const srcTokenChunkAmount = twapSDK.getSrcTokenChunkAmount(parsedSrcAmount.toString(), chunks);
-    const destTokenMinAmount = twapSDK.getDestTokenMinAmount(srcTokenChunkAmount, '', false, srcDecimals);
+    const destTokenMinAmount = twapSDK.getDestTokenMinAmount(srcTokenChunkAmount, limitPrice, false, destDecimals);
     const fillDelayValue = twapSDK.getFillDelay(fillDelay);
 
     // Build ask params

@@ -2088,6 +2088,7 @@ function registerUnsignedTxTools(server: McpServer) {
         .string()
         .describe("The token address the user wants to swap in"),
       fillDelay: z.boolean().optional().describe(""),
+      limitPrice: z.string().optional().describe("The min price at which the user wants to sell source tokens"),
       chunks: z
         .number()
         .optional()
@@ -2109,6 +2110,7 @@ function registerUnsignedTxTools(server: McpServer) {
       destTokenAddress,
       srcTokenAddress,
       fillDelay = true,
+      limitPrice='0',
       chunks = 1,
       deadline,
       network = DEFAULT_NETWORK,
@@ -2124,6 +2126,7 @@ function registerUnsignedTxTools(server: McpServer) {
           fillDelay,
           chunks,
           deadlineMs,
+          limitPrice,
           network
         );
 
