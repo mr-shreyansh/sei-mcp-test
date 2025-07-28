@@ -4,8 +4,9 @@ import { z } from "zod";
 import { DEFAULT_NETWORK, getRpcUrl, getSupportedNetworks } from "./chains.js";
 import { isWalletEnabled } from "./config.js";
 import { getWalletProvider } from "./wallet/index.js";
-import * as services from "./services/index.js";
 import { parseDeadlineToTimestamp } from "./helper.js";
+import * as services from "./services/index.js";
+import { depositSEI, withdrawSEI } from "./services/wsei.js";
 
 /**
  * Register all EVM-related tools with the MCP server
@@ -22,6 +23,9 @@ export function registerEVMTools(server: McpServer) {
   } else {
     registerUnsignedTxTools(server);
   }
+  
+  // Register SEI native token wrapping tools
+  registerSEITools(server);
 }
 
 /**
@@ -1787,6 +1791,98 @@ function registerWalletTools(server: McpServer) {
  * Register tools for building unsigned transactions for an EOA to sign.
  * This is used when no server-side private key is available.
  */
+/**
+ * Register SEI native token wrapping tools
+ * These tools are essential when working with SEI in DeFi protocols,
+ * especially for swapping when there are native tokens involved.
+ * 
+ * Wrapping SEI into wSEI (Wrapped SEI) is often required when interacting
+ * with protocols that don't natively support the SEI token.
+ */
+function registerSEITools(server: McpServer) {
+  // Deposit SEI to get wSEI (unsigned transaction)
+  server.tool(
+    'build_deposit_sei_tx',
+    'Build an unsigned transaction to deposit SEI and get wSEI. This is a necessary step when you need to swap native SEI for other tokens in DeFi protocols. Wrapping SEI converts it to an ERC-20 compatible token that can be used in smart contracts.',
+    {
+      amount: z.string().describe('Amount of SEI to deposit (e.g., "1.5")'),
+      network: z.string().optional().default(DEFAULT_NETWORK).describe('Network name or chain ID')
+    },
+    async ({ amount, network }) => {
+      try {
+        const unsignedTx = services.buildDepositSEITx(amount, network);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: "An unsigned transaction has been prepared. Please sign and send it using your wallet.",
+            },
+          ],
+          tool_output: {
+            ...unsignedTx,
+            description: `Deposit ${amount} SEI to get wSEI`,
+            value: unsignedTx.value || '0',
+          },
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error building deposit transaction: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Withdraw SEI from wSEI (unsigned transaction)
+  server.tool(
+    'build_withdraw_sei_tx',
+    'Build an unsigned transaction to withdraw SEI from wSEI. Use this when you need to convert your wrapped SEI (wSEI) back to native SEI. This is typically done after completing DeFi operations when you want to use the native token again.',
+    {
+      amount: z.string().describe('Amount of wSEI to withdraw (e.g., "1.5")'),
+      network: z.string().optional().default(DEFAULT_NETWORK).describe('Network name or chain ID')
+    },
+    async ({ amount, network }) => {
+      try {
+        const unsignedTx = services.buildWithdrawSEITx(amount, network);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: `An unsigned transaction has been prepared to withdraw ${amount} wSEI. Please sign and send it using your wallet.`,
+            },
+          ],
+          tool_output: {
+            ...unsignedTx,
+            description: `Withdraw ${amount} wSEI to get SEI`,
+            value: '0', // No value needed for withdraw, it's a contract call
+          },
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error building withdraw transaction: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+}
+
 function registerUnsignedTxTools(server: McpServer) {
   // This tool builds the transaction for an EOA to sign.
   server.tool(

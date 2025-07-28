@@ -157,7 +157,7 @@ export async function buildask(
 
     // Calculate chunk amount and min amount
     const srcTokenChunkAmount = twapSDK.getSrcTokenChunkAmount(parsedSrcAmount.toString(), chunks);
-    const destTokenMinAmount = twapSDK.getDestTokenMinAmount(srcTokenChunkAmount, limitPrice, false, destDecimals);
+    const destTokenMinAmount = twapSDK.getDestTokenMinAmount(srcTokenChunkAmount, limitPrice, false, srcDecimals);
     const fillDelayValue = twapSDK.getFillDelay(fillDelay);
 
     // Build ask params

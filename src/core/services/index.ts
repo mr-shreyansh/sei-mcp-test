@@ -7,6 +7,12 @@ export * from './transactions.js';
 export * from './contracts.js';
 export * from './tokens.js';
 export * from './twap.js';
+export { 
+  depositSEI, 
+  withdrawSEI, 
+  buildDepositSEITx, 
+  buildWithdrawSEITx 
+} from './wsei.js';
 export { utils as helpers } from './utils.js';
 
 // Re-export common types for convenience
