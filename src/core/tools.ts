@@ -1844,7 +1844,7 @@ function registerSEITools(server: McpServer) {
   // Withdraw SEI from wSEI (unsigned transaction)
   server.tool(
     'build_withdraw_sei_tx',
-    'Build an unsigned transaction to withdraw SEI from wSEI. Use this when you need to convert your wrapped SEI (wSEI) back to native SEI. This is typically done after completing DeFi operations when you want to use the native token again.',
+    'Build an unsigned transaction to withdraw SEI from wSEI. Use this when you need to convert your wrapped SEI (wSEI) back to native SEI. This is typically done after completing DeFi operations when you want to use the native token again. Requires prior approval from user where spender is wsei contract address.',
     {
       amount: z.string().describe('Amount of wSEI to withdraw (e.g., "1.5")'),
       network: z.string().optional().default(DEFAULT_NETWORK).describe('Network name or chain ID')
@@ -1943,7 +1943,7 @@ function registerUnsignedTxTools(server: McpServer) {
       amount: z
         .string()
         .describe(
-          "The amount of tokens to send (in token units, e.g., '10' for 10 tokens)"
+          "The amount of tokens to send (in token units, e.g., '10' for 10 tokens, dont include decimals)"
         ),
       network: z
         .string()
@@ -1998,7 +1998,7 @@ function registerUnsignedTxTools(server: McpServer) {
       amount: z
         .string()
         .describe(
-          "The amount of tokens to approve (in token units, e.g., '1000' for 1000 tokens)"
+          "The amount of tokens to approve (in token units, e.g., '1000' for 1000 tokens, dont include decimals)"
         ),
       network: z
         .string()
@@ -2174,7 +2174,7 @@ function registerUnsignedTxTools(server: McpServer) {
 
   server.tool(
     "place_limit_order",
-    'Place limit order for a pair of tokens. This creates an unsigned transaction that can be signed by the user. For deadline, you can enter durations like "1 week", "3 days", or an exact date like "3 August 2025" or if its something informal like 3rd aug 25 then convert it in standard format like 3 August 2025 before feeding to the tool.The tool has Helper to parse duration or date string to timestamp',
+    'Place limit order for a pair of tokens. This creates an unsigned transaction that can be signed by the user. For deadline, you can enter durations like "1 week", "3 days", or an exact date like "3 August 2025" or if its something informal like 3rd aug 25 then convert it in standard format like 3 August 2025 before feeding to the tool.The tool has Helper to parse duration or date string to timestamp. approve_erc20 needs to be called before this tool to ensure sufficient allowance for the src token.',
     {
       amount: z.string().describe("The src Amount user wants to swap for"),
       destTokenAddress: z
@@ -2212,6 +2212,10 @@ function registerUnsignedTxTools(server: McpServer) {
       network = DEFAULT_NETWORK,
     }) => {
       try {
+
+        // check allowance
+        // if allowance is less than amount then call approve_erc20
+        
         const deadlineTimestamp = parseDeadlineToTimestamp(deadline);
         const deadlineMs = deadlineTimestamp * 1000;
         console.log('deadline', deadlineMs);
