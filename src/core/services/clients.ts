@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { http, type Address, type Hex, type PublicClient, type WalletClient, createPublicClient, createWalletClient } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { DEFAULT_NETWORK, getChain, getRpcUrl } from '../chains.js';

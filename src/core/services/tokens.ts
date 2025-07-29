@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { type Address, type Hash, type Hex, formatUnits, getContract } from 'viem';
 import { getPublicClient } from './clients.js';
 

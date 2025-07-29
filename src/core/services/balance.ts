@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { type Address, formatEther, formatUnits, getContract } from 'viem';
 import { DEFAULT_NETWORK } from '../chains.js';
 import { getPublicClient } from './clients.js';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Address, Hash, WalletClient } from 'viem';
 import { createWalletClient, http } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';

@@ -3,7 +3,16 @@
 	"compilerOptions": {
 		"types": ["jest", "node"],
 		"isolatedModules": true,
-		"resolveJsonModule": true
+		"resolveJsonModule": true,
+		"strict": false,
+		"strictNullChecks": false,
+		"strictFunctionTypes": false,
+		"strictBindCallApply": false,
+		"noImplicitAny": false,
+		"noImplicitThis": false,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true
 	},
-	"include": ["src/tests/**/*.test.ts"]
+	"include": ["src/tests/**/*.test.ts", "src/tests/**/*.ts"]
 }

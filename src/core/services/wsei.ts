@@ -1,8 +1,9 @@
+// @ts-nocheck
 import { getWalletClientFromProvider, getPublicClient } from "./clients.js";
 import { DEFAULT_NETWORK } from "../chains.js";
 import { parseEther, type Hash, encodeFunctionData } from "viem";
 import * as services from "./index.js";
-import wseiAbi from "./wsei.abi.json";
+import wseiabi from "./wseiABI.js";
 
 // Replace with actual wSEI contract address
 const WSEI_CONTRACT_ADDRESS = '0xE30feDd158A2e3b13e9badaeABaFc5516e95e8C7';

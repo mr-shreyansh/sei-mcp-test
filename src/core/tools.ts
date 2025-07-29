@@ -7,6 +7,7 @@ import { getWalletProvider } from "./wallet/index.js";
 import { parseDeadlineToTimestamp } from "./helper.js";
 import * as services from "./services/index.js";
 import { depositSEI, withdrawSEI } from "./services/wsei.js";
+import { parseUnits } from "viem";
 
 /**
  * Register all EVM-related tools with the MCP server
@@ -2200,6 +2201,7 @@ function registerUnsignedTxTools(server: McpServer) {
         .describe(
           "Network name (e.g., 'sei', 'sei-testnet', 'sei-devnet') or chain ID. Defaults to Sei mainnet."
         ),
+      userAddress: z.string().optional().describe("The user address"),
     },
     async ({
       amount,
@@ -2210,12 +2212,59 @@ function registerUnsignedTxTools(server: McpServer) {
       chunks = 1,
       deadline,
       network = DEFAULT_NETWORK,
+      userAddress
     }) => {
       try {
-
-        // check allowance
-        // if allowance is less than amount then call approve_erc20
         
+        console.log("add", userAddress)
+        // The TWAP contract is the spender
+        const spenderAddress = "0xde737dB24548F8d41A4a3Ca2Bac8aaaDc4DBA099";
+
+        // Check current allowance
+        const allowance = await services.getAllowance(
+          srcTokenAddress,
+          userAddress,
+          spenderAddress,
+          network
+        );
+
+        const requiredAmount = parseUnits(amount, allowance.token.decimals);
+
+        // If allowance is less than the required amount, ask for approval.
+        if (allowance.raw < requiredAmount) {
+          console.log("low allowance")
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Insufficient allowance. Please approve at least ${amount} ${allowance.token.symbol} for the exchange contract.`,
+              },
+            ],
+            tool_output: {
+              action: "approve_erc20",
+              tokenAddress: srcTokenAddress,
+              spenderAddress: spenderAddress,
+              amount: amount, // The amount to approve
+              network: network,
+              // After approval, the client can call the limit order tool again.
+              next_action: {
+                tool: "place_limit_order",
+                params: {
+                  amount,
+                  destTokenAddress,
+                  srcTokenAddress,
+                  fillDelay,
+                  limitPrice,
+                  chunks,
+                  deadline,
+                  network,
+                },
+              },
+            },
+          };
+        }
+
+        // If we have enough allowance, proceed with building the limit order transaction.
         const deadlineTimestamp = parseDeadlineToTimestamp(deadline);
         const deadlineMs = deadlineTimestamp * 1000;
         console.log('deadline', deadlineMs);

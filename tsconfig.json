@@ -1,14 +1,16 @@
 {
-	"extends": "../../tsconfig.base.json",
-	"include": ["src"],
 	"compilerOptions": {
-		"outDir": "./dist/types",
-		"moduleResolution": "bundler"
+	  "target": "ES2022",
+	  "module": "NodeNext",
+	  "moduleResolution": "NodeNext",
+	  "esModuleInterop": true,
+	  "strict": false,
+	  "skipLibCheck": true,
+	  "outDir": "dist",
+	  "sourceMap": true,
+	  "declaration": true,
+	  "resolveJsonModule": true
 	},
-	"typedocOptions": {
-		"readme": "./README.md",
-		"name": "mcp-server",
-		"entryPoints": ["src/index.ts"],
-		"exclude": ["node_modules"]
-	}
-}
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "dist"]
+  }

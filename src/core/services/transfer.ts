@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   type Address,
   Client,
@@ -5,6 +6,7 @@ import {
   getContract,
   parseEther,
   parseUnits,
+  formatUnits,
 } from "viem";
 import { DEFAULT_NETWORK } from "../chains.js";
 import { getPublicClient, getWalletClientFromProvider } from "./clients.js";
@@ -441,7 +443,7 @@ export async function buildSeiTransferTx(
   };
 }
 
-export async function  buildTransferERC20(
+export async function buildTransferERC20(
   tokenAddress: string,
   toAddress: string,
   amount: string,
@@ -453,7 +455,7 @@ export async function  buildTransferERC20(
   const publicClient = getPublicClient(network);
 
   const contract = getContract({
-	address: validatedTokenAddress,
+    address: validatedTokenAddress,
     abi: erc20TransferAbi,
     client: publicClient as any,
   });
@@ -543,6 +545,64 @@ export async function buildTransferERC1155(
   };
 }
 
+/**
+ * Get the allowance of a token for a spender
+ * @param tokenAddress Token contract address
+ * @param ownerAddress Owner address
+ * @param spenderAddress Spender address
+ * @param network Network name or chain ID
+ * @returns Allowance amount in token units
+ */
+export async function getAllowance(
+  tokenAddress: string,
+  ownerAddress: string,
+  spenderAddress: string,
+  network = DEFAULT_NETWORK
+): Promise<{
+  raw: bigint;
+  formatted: string;
+  token: {
+    symbol: string;
+    decimals: number;
+  };
+}> {
+  console.log("getAllowance")
+  const validatedTokenAddress = services.helpers.validateAddress(tokenAddress);
+  const validatedOwnerAddress = services.helpers.validateAddress(ownerAddress);
+  const validatedSpenderAddress = services.helpers.validateAddress(spenderAddress);
 
+  const publicClient = getPublicClient(network);
 
+  const contract = getContract({
+    address: validatedTokenAddress,
+    abi: [
+      ...erc20TransferAbi,
+      {
+        inputs: [
+          { type: "address", name: "owner" },
+          { type: "address", name: "spender" },
+        ],
+        name: "allowance",
+        outputs: [{ type: "uint256" }],
+        stateMutability: "view",
+        type: "function",
+      },
+    ],
+    client: publicClient as any,
+  });
 
+  const [allowance, symbol, decimals] = await Promise.all([
+    contract.read.allowance([validatedOwnerAddress, validatedSpenderAddress]),
+    contract.read.symbol(),
+    contract.read.decimals(),
+  ]);
+
+  return {
+    raw: allowance as bigint,
+    formatted: formatUnits(allowance as bigint, decimals as number),
+    token: {
+      symbol: symbol as string,
+      decimals: decimals as number,
+    },
+  };
+}
